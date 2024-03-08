@@ -1578,6 +1578,7 @@ dependencies = [
 name = "stackoverflow-clone"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "rocket",
  "rocket_db_pools",
 ]

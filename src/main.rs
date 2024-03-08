@@ -16,7 +16,7 @@ use handlers::{create_question, get_question};
 pub async fn get_questions(mut db: Connection<StackoverflowDb>) -> Option<String> {
     println!("get questions api");
 
-    let query = sqlx::query("SELECT content FROM stackoverflow WHERE id = ?")
+    let query = sqlx::query("SELECT * FROM test ")
         .fetch_one(&mut **db)
         .await
         .and_then(|r| Ok(r.try_get(0)?))
