@@ -7,16 +7,7 @@ use rocket_db_pools::sqlx::Row;
 use rocket_db_pools::Connection;
 use uuid::Uuid;
 
-use super::THandler;
-
-#[derive(Debug, Deserialize)]
-#[serde(crate = "rocket::serde")]
-pub struct Question {
-    #[serde(skip_deserializing)]
-    pub id: Option<i32>,
-    pub title: String,
-    pub body: String,
-}
+use super::{Question, THandler};
 
 #[post("/questions", data = "<question_json>")]
 pub async fn create_question(
@@ -47,17 +38,40 @@ pub async fn create_question(
 }
 
 #[get("/questions")]
-pub async fn get_questions(mut db: Connection<StackoverflowDb>) -> Result<Vec<Question>, String> {
+pub async fn get_questions(
+    mut db: Connection<StackoverflowDb>,
+) -> Result<Json<Vec<Question>>, String> {
     println!("get question api");
-    // println!("{:?}", conn);
-    let query = sqlx::query("SELECT * FROM questions ")
-        .fetch_one(&mut **db)
-        .await
-        .and_then(|r| Ok(r.try_get(0)?))
-        .ok();
 
-    let result = query.unwrap();
-    return Result::Ok(result);
+    let query = sqlx::query("SELECT * FROM questions")
+        .fetch_all(&mut **db)
+        .await;
+
+    match query {
+        Ok(rows) => {
+            let questions: Vec<Question> = rows
+                .iter()
+                .map(|row| {
+                    let id: String = row.get("id");
+                    let title: String = row.get("title");
+                    let body: String = row.get("body");
+
+                    Question {
+                        id: Some(id),
+                        title,
+                        body,
+                    }
+                })
+                .collect();
+
+            println!("Questions fetched successfully");
+            return Ok(Json(questions));
+        }
+        Err(err) => {
+            println!("Error fetching questions: {:?}", err);
+            return Err("Error fetching questions".to_string());
+        }
+    }
 }
 
 pub struct Handler {}
@@ -72,7 +86,9 @@ impl THandler for Handler {
         return create_question(question_json, conn).await;
     }
 
-    async fn get_questions(conn: Connection<StackoverflowDb>) -> Result<Vec<Question>, String> {
+    async fn get_questions(
+        conn: Connection<StackoverflowDb>,
+    ) -> Result<Json<Vec<Question>>, String> {
         return get_questions(conn).await;
     }
 }

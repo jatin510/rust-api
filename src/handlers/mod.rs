@@ -1,13 +1,21 @@
 mod handlers;
 
 use async_trait::async_trait;
-use rocket::serde::json::Json;
+use rocket::serde::{json::Json, Deserialize};
 use rocket_db_pools::Connection;
+use serde::Serialize;
 
 use crate::StackoverflowDb;
 pub use handlers::{create_question, get_questions};
 
-use self::handlers::Question;
+#[derive(Debug, Deserialize, Serialize, Clone)]
+#[serde(crate = "rocket::serde")]
+pub struct Question {
+    #[serde(skip_deserializing)]
+    pub id: Option<String>,
+    pub title: String,
+    pub body: String,
+}
 
 pub enum HandlerError {
     BadRequest(String),
@@ -20,5 +28,7 @@ pub trait THandler {
         question_json: Json<Question>,
         conn: Connection<StackoverflowDb>,
     ) -> Result<String, String>;
-    async fn get_questions(conn: Connection<StackoverflowDb>) -> Result<Vec<Question>, String>;
+    async fn get_questions(
+        conn: Connection<StackoverflowDb>,
+    ) -> Result<Json<Vec<Question>>, String>;
 }
