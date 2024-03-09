@@ -1,22 +1,53 @@
 use rocket_db_pools::sqlx::{self};
 
-use async_trait::async_trait;
-
 use crate::StackoverflowDb;
+use async_trait::async_trait;
+use rocket::serde::{json::Json, Deserialize};
 use rocket_db_pools::sqlx::Row;
 use rocket_db_pools::Connection;
+use uuid::Uuid;
 
 use super::THandler;
 
-#[post("/question")]
-pub async fn create_question(mut db: Connection<StackoverflowDb>) -> Result<String, String> {
-    println!("create question");
-    // println!("{:?}", conn);
-    return Result::Ok("create question".to_string());
+#[derive(Debug, Deserialize)]
+#[serde(crate = "rocket::serde")]
+pub struct Question {
+    #[serde(skip_deserializing)]
+    pub id: Option<i32>,
+    pub title: String,
+    pub body: String,
 }
 
-#[get("/question")]
-pub async fn get_question(mut db: Connection<StackoverflowDb>) -> Result<String, String> {
+#[post("/questions", data = "<question_json>")]
+pub async fn create_question(
+    question_json: Json<Question>,
+    mut db: Connection<StackoverflowDb>,
+) -> Result<String, String> {
+    println!("create question");
+
+    let id = Uuid::new_v4().to_string();
+
+    let query = sqlx::query("INSERT INTO questions (id, title, body) VALUES (?, ?, ?)")
+        .bind(id)
+        .bind(question_json.title.clone())
+        .bind(question_json.body.clone())
+        .execute(&mut **db)
+        .await;
+
+    match query {
+        Ok(query) => {
+            println!("success: {:?}", query);
+            return Ok("Question is created successfully".to_string());
+        }
+        Err(err) => {
+            println!("error: {:?}", err);
+            return Err("Error creating Question".to_string());
+        }
+    }
+}
+
+#[get("/questions")]
+pub async fn get_questions(mut db: Connection<StackoverflowDb>) -> Result<String, String> {
     println!("get question api");
     // println!("{:?}", conn);
     let query = sqlx::query("SELECT * FROM test ")
@@ -33,11 +64,15 @@ pub struct Handler {}
 
 #[async_trait]
 impl THandler for Handler {
-    async fn create_question(mut conn: Connection<StackoverflowDb>) -> Result<String, String> {
-        return create_question(conn).await;
+    async fn create_question(
+        question_json: Json<Question>,
+        conn: Connection<StackoverflowDb>,
+    ) -> Result<String, String> {
+        println!("inside create question handler");
+        return create_question(question_json, conn).await;
     }
 
-    async fn get_question(mut conn: Connection<StackoverflowDb>) -> Result<String, String> {
-        return get_question(conn).await;
+    async fn get_questions(conn: Connection<StackoverflowDb>) -> Result<String, String> {
+        return get_questions(conn).await;
     }
 }

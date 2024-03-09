@@ -6,13 +6,14 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rocket = "0.5.0"
-async-trait = "0.1.50" # Check for the latest version
-rocket_db_pools= {version = "0.1.0",features = ["sqlx_sqlite"]}
+rocket = { version = "0.5.0", features = ["json"] }
+async-trait = { version = "0.1.50" }
+rocket_db_pools = { version = "0.1.0", features = ["sqlx_sqlite"] }
+serde = { version = "1.0", features = ["derive"] }
+uuid = { version = "1.7.0", features = ["v4"] }
 
 # [dependencies.rocket_db_pools]
 # version = "0.1.0"
 # features = ["sqlx_sqlite"]
 
 # serde = { version = "1", features = ["derive"] }
-
