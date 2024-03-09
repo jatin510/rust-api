@@ -47,10 +47,10 @@ pub async fn create_question(
 }
 
 #[get("/questions")]
-pub async fn get_questions(mut db: Connection<StackoverflowDb>) -> Result<String, String> {
+pub async fn get_questions(mut db: Connection<StackoverflowDb>) -> Result<Vec<Question>, String> {
     println!("get question api");
     // println!("{:?}", conn);
-    let query = sqlx::query("SELECT * FROM test ")
+    let query = sqlx::query("SELECT * FROM questions ")
         .fetch_one(&mut **db)
         .await
         .and_then(|r| Ok(r.try_get(0)?))
@@ -72,7 +72,7 @@ impl THandler for Handler {
         return create_question(question_json, conn).await;
     }
 
-    async fn get_questions(conn: Connection<StackoverflowDb>) -> Result<String, String> {
+    async fn get_questions(conn: Connection<StackoverflowDb>) -> Result<Vec<Question>, String> {
         return get_questions(conn).await;
     }
 }
